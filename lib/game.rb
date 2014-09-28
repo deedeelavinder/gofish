@@ -10,7 +10,7 @@ class Game
   def initialize
     @deck = Deck.new
     @players = []
-    @players << Player.new
+    @players << Player.new(self)
     @players << Dealer.new(self)
     @players.each {|p| deal(p, 7)}
     p @players
@@ -20,6 +20,11 @@ class Game
     print "Let's play 'Go, Fish!', #{@player}."
     start
   end
+
+  # def deal(player, n=1)
+  #   n = [n, @deck.cards_remaining].min
+  #   player.take_cards(@deck.deal(n))
+  # end
 
   def deal(player, n=1)
     n = [n, @deck.cards_remaining].min
@@ -54,7 +59,6 @@ class Players
 
   def ask(other_players)
     wanted = wanted_card
-    puts "#{@name}: Do you have a #{wanted}?"
     received = other_players.answer(wanted)
     @other_players_hand[:has_asked_for].delete(wanted)
     if received.empty?
@@ -74,18 +78,17 @@ class Players
     if @hand[rank]
       cards = @hand[rank]
       @hand.delete(rank)
-      puts "#{@name}: Why, yes I do. Here you go -- #{cards.join(', ')}."
+      puts "Why, yes I do. Here you go -- #{cards.join(', ')}."
       @game.deal(self, 1) if @hand.empty?
     else
-      puts "#@name: Go Fish!"
+      puts "I'm sorry, I don't have any #{rank}s. Go Fish!"
     end
     cards
   end
 
-  def take_cards(card_s)
-    my_cards = @hand.values.flatten(card_s)
+  def take_cards(cards)
+    my_cards = @hand.values.flatten.concat(cards)
     @hand = my_cards.group_by {|card| card.rank}
-
     @hand.each do |rank, cards|
       if cards.length == 4
         puts "#{@name} made a book of #{rank}."
@@ -101,14 +104,13 @@ class Players
   def num_books
     @books.length
   end
-  #
-  # def print_hand
-  #   puts "hand for #@name:"
-  #   puts "  hand: "+ @hand.values.flatten.sort.join(', ')
-  #   puts "  books: "+ @books.join(', ')
-  #   puts "opponent is known to have: " + @opponents_hand[:has_asked_for].sort.join(', ')
-  # end
 
+  def print_hand
+    puts "#{@name}, you've got"
+    puts "                    hand: " + @hand.values.flatten.sort.join(', ')
+    puts "                   books: " + @books.join(', ')
+    puts "Remember, they asked for: " + @other_players_hand[:has_asked_for].sort.join(', ')
+  end
 end
 
 class Dealer < Players
@@ -139,7 +141,7 @@ class Dealer < Players
 end
 
 class Player < Players
-  attr_accessor :name, :player_hand,
+  attr_accessor :name, :player_hand
 
   def initialize(game)
     super
@@ -162,12 +164,12 @@ class Player < Players
     wanted = nil
     loop do
       print "\n#{@name}, What would you like to ask for?"
-      wanted = gets.strip!.upcase!
-      until Card::RANKS.include?(wanted)
-        puts "Whoops, that is not a valid rank: #{wanted} -- try again."
-      end
-      until @hand.has_key?(wanted)
-        puts "Whoops, you don't have a #{wanted} -- try again."
+      wanted = $stdin.gets
+      wanted.strip!.upcase!
+      if Card::RANKS.include?(wanted) && @hand.has_key?(wanted)
+        break
+      else
+        puts "Whoops, you must enter a valid rank from your hand. Please try again."
       end
     end
     wanted
@@ -210,6 +212,11 @@ class Card
   def initialize(rank, suit)
     @rank = rank
     @suit = suit
+  end
+
+  def <=>(other)
+    (RANKS.find_index(self.rank) <=> RANKS.find_index(other.rank)).nonzero? ||
+    (SUITS.find_index(self.suit) <=> SUITS.find_index(other.suit))
   end
 
   def to_s

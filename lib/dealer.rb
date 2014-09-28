@@ -1,4 +1,3 @@
-
 class Dealer < Players
 
   def initialize(game)
