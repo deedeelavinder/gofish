@@ -6,9 +6,10 @@ class Dealer < Players
   end
 
   def wanted_card
-    known = @hand.keys & @other_players_hand[:known_to_have]
+    puts "If you have what I need, I'll go ahead and take it."
+    known = @hand.keys & @other_players_hand[:has_asked_for]
     if known.empty?
-      possibilities = @hand.keys - @other_players_hand[:known_not_to_have]
+      possibilities = @hand.keys - @other_players_hand[:has_not_asked_for]
       if possibilities.empty?
         the_most_of(@hand.keys).first
         @hand.keys.shuffle.first

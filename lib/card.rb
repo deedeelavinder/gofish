@@ -9,6 +9,11 @@ class Card
     @suit = suit
   end
 
+  def <=>(other)
+    (RANKS.find_index(self.rank) <=> RANKS.find_index(other.rank)).nonzero? ||
+    (SUITS.find_index(self.suit) <=> SUITS.find_index(other.suit))
+  end
+
   def to_s
     @rank + @suit
   end
