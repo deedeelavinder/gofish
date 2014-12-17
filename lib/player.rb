@@ -14,7 +14,7 @@ class Player < Players
   end
 
   def take_cards(cards)
-    puts "Here it is: #{cards.join(', ')}"
+    puts "You get these card/s: #{cards.join(', ')}"
     puts
     super
   end
